@@ -5,9 +5,9 @@ namespace Loan.Application;
 public record DecisionResult(bool Approved, string? DenialReason);
 
 /// <summary>
-/// Evaluates all deny rules against the application data.
-/// The engine itself has no rule knowledge: rules arrive via DI, so a new rule
-/// never requires touching the engine or existing rules (open/closed).
+/// Evalúa todas las reglas de rechazo contra los datos de la solicitud.
+/// El motor no conoce ninguna regla en concreto: las recibe por inyección, así que
+/// agregar una regla nueva no obliga a tocar el motor ni las reglas existentes.
 /// </summary>
 public class RuleEngine
 {

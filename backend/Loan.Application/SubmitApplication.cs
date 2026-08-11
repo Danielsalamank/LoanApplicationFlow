@@ -2,19 +2,19 @@ using Loan.Domain;
 
 namespace Loan.Application;
 
-/// <summary>Port: transactional persistence of an approved application.</summary>
+/// <summary>Puerto: guardado transaccional de una solicitud aprobada.</summary>
 public interface ILoanStore
 {
     Task<Customer?> FindCustomerBySsnAsync(string ssn, CancellationToken ct);
 
     /// <summary>
-    /// Saves (insert or update) customer + application and enqueues the outgoing
-    /// event as ONE unit of work: if anything fails, nothing is persisted.
+    /// Guarda (inserta o actualiza) cliente y solicitud, y encola el evento saliente
+    /// como UNA sola unidad de trabajo: si algo falla, no se persiste nada.
     /// </summary>
     Task SaveApprovedAsync(Customer customer, Domain.Application application, LoanEvent loanEvent, CancellationToken ct);
 }
 
-/// <summary>Event delivered in the background to the external service.</summary>
+/// <summary>Evento que se entrega en segundo plano al servicio externo.</summary>
 public record LoanEvent(Customer Customer, Domain.Application Application, bool IsReturningCustomer);
 
 public record SubmitResult(bool Approved, string? DenialReason, bool IsReturningCustomer);
@@ -44,7 +44,7 @@ public class SubmitApplication
 
         if (isReturning)
         {
-            // Returning customer: update the existing records, never duplicate.
+            // Cliente recurrente: se actualizan sus registros, nunca se duplican.
             customer = existing!;
             customer.FirstName = data.FirstName;
             customer.LastName = data.LastName;

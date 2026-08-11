@@ -8,9 +8,10 @@ using Microsoft.Extensions.Logging;
 namespace Loan.Infrastructure;
 
 /// <summary>
-/// Background worker: polls the outbox and pushes pending events to the external
-/// service. It runs outside the HTTP request that answers the form.
-/// Retry is "at least once" via re-polling; the external service is idempotent by SSN.
+/// Proceso en segundo plano: revisa la bandeja de salida y envía los eventos pendientes
+/// al servicio externo. Corre fuera del request HTTP que responde al formulario.
+/// La entrega es "al menos una vez" gracias a los reintentos; el servicio externo es
+/// idempotente porque se identifica al cliente por su SSN.
 /// </summary>
 public class OutboxPublisher : BackgroundService
 {

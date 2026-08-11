@@ -128,7 +128,7 @@ public class TestApi : WebApplicationFactory<Program>, IAsyncLifetime
             services.RemoveAll<LoanDbContext>();
             services.AddDbContext<LoanDbContext>(options => options.UseSqlite(_connection));
 
-            // The outbox publisher is covered separately; it must not hit the network here.
+            // El publicador de la bandeja de salida se prueba aparte; aquí no debe salir a la red.
             services.RemoveAll<IHostedService>();
         });
     }

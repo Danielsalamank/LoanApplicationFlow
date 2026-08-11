@@ -91,8 +91,8 @@ public class SubmitApplicationTests : IDisposable
         using (var db = NewContext())
             await NewUseCase(db).ExecuteAsync(Data(), CancellationToken.None);
 
-        // Second customer reusing the same SSN through a store that skips the
-        // returning-customer lookup: the unique index makes SaveChanges fail.
+        // Segundo cliente con el mismo SSN a través de un almacén que se salta la
+        // búsqueda de cliente recurrente: el índice único hace fallar el guardado.
         using (var db = NewContext())
         {
             var useCase = new SubmitApplication(

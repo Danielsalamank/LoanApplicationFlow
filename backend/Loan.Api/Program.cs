@@ -11,7 +11,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<LoanDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Default") ?? "Data Source=loan.db"));
 
-// Rule engine: every registered IDenyRule is evaluated. Adding a rule = one line here.
+// Motor de reglas: se evalúa cada IDenyRule registrada. Agregar una regla = una línea aquí.
 builder.Services.AddScoped<IDenyRule, NyStateDenyRule>();
 builder.Services.AddScoped<IDenyRule>(_ =>
     new BlacklistedSsnDenyRule(builder.Configuration.GetSection("BlacklistedSsns").Get<string[]>() ?? []));

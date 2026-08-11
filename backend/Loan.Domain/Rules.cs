@@ -1,15 +1,15 @@
 namespace Loan.Domain;
 
 /// <summary>
-/// A deny rule. If a rule returns a non-null reason, the application is denied.
-/// To add a new rule: create a class implementing this interface and register it in DI.
+/// Regla de rechazo. Si una regla devuelve un motivo distinto de null, la solicitud se rechaza.
+/// Para agregar una regla nueva: crear una clase que implemente esta interfaz y registrarla en el contenedor.
 /// </summary>
 public interface IDenyRule
 {
     string? Evaluate(LoanApplicationData data);
 }
 
-/// <summary>Immutable snapshot of the form data the rules evaluate.</summary>
+/// <summary>Copia inmutable de los datos del formulario que evalúan las reglas.</summary>
 public record LoanApplicationData(
     string FirstName,
     string LastName,

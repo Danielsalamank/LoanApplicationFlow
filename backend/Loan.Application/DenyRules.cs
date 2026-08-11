@@ -2,7 +2,7 @@ using Loan.Domain;
 
 namespace Loan.Application;
 
-/// <summary>Concrete deny rules. Adding a new rule = new class + one line in DI.</summary>
+/// <summary>Reglas de rechazo concretas. Agregar una regla = una clase nueva y una línea de registro.</summary>
 public class NyStateDenyRule : IDenyRule
 {
     public string? Evaluate(LoanApplicationData data) =>

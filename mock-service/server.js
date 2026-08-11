@@ -3,7 +3,7 @@ import express from "express";
 const app = express();
 app.use(express.json());
 
-/** In-memory store keyed by SSN: the contract is idempotent per customer. */
+/** Almacén en memoria indexado por SSN: el contrato es idempotente por cliente. */
 const customers = new Map();
 
 app.post("/customers", (req, res) => {
@@ -22,7 +22,7 @@ app.put("/customers/:ssn", (req, res) => {
   res.status(200).json({ status: "ok", operation: "updated", ssn });
 });
 
-/** Inspection endpoint, used by the UI and the demo to prove delivery. */
+/** Endpoint de inspección: lo usa la demo para comprobar qué llegó. */
 app.get("/customers", (_req, res) => res.json([...customers.values()]));
 
 const port = process.env.PORT || 4000;

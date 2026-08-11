@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Loan.Infrastructure;
 
 /// <summary>
-/// EF Core implementation of the transactional store. A single SaveChangesAsync
-/// is one database transaction: customer, application and outbox message are
-/// committed together or not at all.
+/// Implementación con EF Core del almacén transaccional. Un único SaveChangesAsync
+/// equivale a una transacción de base de datos: cliente, solicitud y mensaje del
+/// evento se confirman juntos o no se confirma ninguno.
 /// </summary>
 public class LoanStore : ILoanStore
 {
