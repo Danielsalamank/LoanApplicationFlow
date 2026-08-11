@@ -76,8 +76,9 @@ El servicio simulado también escribe cada llamada en su consola:
 - **SQLite** en lugar de SQL Server o PostgreSQL: transacciones reales sin que quien
   revise tenga que instalar nada.
 - El proceso en segundo plano consulta la bandeja de salida por sondeo, con un tope de
-  reintentos; no se usa ningún broker de mensajería. El razonamiento completo y el
-  resto de decisiones están en [ARCHITECTURE.md](ARCHITECTURE.md).
+  reintentos; no se usa ningún broker de mensajería.
+- **Sin Docker, sin integración continua y sin datos semilla.** El razonamiento de cada
+  uno está en [ARCHITECTURE.md](ARCHITECTURE.md), junto con el resto de decisiones.
 
 La interfaz está en inglés porque el producto y sus términos (SSN, state) son de
 Estados Unidos; la documentación y los comentarios del código están en español.

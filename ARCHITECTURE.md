@@ -117,3 +117,24 @@ Decisiones de diseño:
 - **Los motivos de rechazo se devuelven al navegador.** Sirve para el ejercicio, pero un
   producto real mantendría el motivo real en el servidor (que alguien pueda descubrir
   la lista negra probando el formulario no es deseable) y mostraría un mensaje genérico.
+
+## Extras que decidí no incluir
+
+El enunciado admite datos semilla, Docker, integración continua o registro estructurado
+"solo si se ganan su lugar". Revisé cada uno y ninguno lo hace en este alcance:
+
+- **Autenticación:** el enunciado la descarta explícitamente y no hay ningún dato que
+  proteger detrás de una sesión.
+- **Docker:** levantar el proyecto ya son tres comandos y no hay ningún servicio que
+  instalar, porque la base de datos es un archivo SQLite. Un `docker-compose` agregaría
+  archivos y tiempo de construcción para resolver un problema que aquí no existe.
+- **Integración continua:** el valor de un pipeline es impedir que se rompa lo que ya
+  funciona a lo largo del tiempo, y este repositorio no va a recibir más cambios.
+  `dotnet test` cumple la misma función para quien lo revise.
+- **Datos semilla:** la lista negra de SSN vive en la configuración y el README indica
+  exactamente qué escribir para cada caso. Precargar clientes solo ensuciaría la
+  demostración del camino del cliente recurrente.
+- **Registro estructurado:** se usa `ILogger` donde de verdad aporta, que es la entrega
+  del evento en segundo plano (entregado, fallido, número de intentos), porque ahí
+  falla algo fuera del proceso y sin rastro no habría manera de diagnosticarlo. Sumar
+  Serilog con sinks encima de eso sería configuración sin lector.
