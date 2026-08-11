@@ -1,0 +1,23 @@
+## .NET
+bin/
+obj/
+*.db
+*.db-shm
+*.db-wal
+*.user
+
+## Node
+node_modules/
+.next/
+out/
+npm-debug.log*
+
+## Env
+.env*.local
+
+## Editors / OS
+.vs/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
