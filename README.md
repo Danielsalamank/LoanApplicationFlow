@@ -1,36 +1,37 @@
-# Fundo — Flujo de solicitud de préstamo
+# Fundo — Loan Application Flow
 
-> **Video de la demo:** _PENDIENTE: pegar aquí el enlace público (Loom) antes de enviar el repositorio._
+> **Demo video:** _TODO: paste your public Loom/Jam link here before sending the repository._
 
-Flujo completo de solicitud de préstamo: un formulario en Next.js, un backend en .NET
-donde un motor de reglas decide la aprobación, guardado transaccional en base de datos
-y un evento en segundo plano que envía el resultado a un servicio externo por HTTP.
+_Versión en español: [README.es.md](README.es.md)_
+
+A small loan application flow: a Next.js form, a .NET backend where a rule engine
+decides approval, transactional persistence, and a background event that pushes the
+result to an external service over HTTP.
 
 ```
 frontend (Next.js :3000) → API (.NET :5137) → SQLite (loan.db)
                                     │
-                                    └── bandeja de salida → proceso en segundo plano → servicio externo simulado (:4000)
+                                    └── outbox → background worker → mock external service (:4000)
 ```
 
-## Requisitos
+## Requirements
 
-- SDK de .NET 10
-- Node.js 20 o superior
+- .NET SDK 10
+- Node.js 20+
 
-No hace falta instalar ningún servidor de base de datos: se usa un archivo SQLite que
-se crea solo en el primer arranque.
+No database server is needed: SQLite file, created automatically on first run.
 
-## Cómo levantar todo en local
+## Run everything locally
 
-Tres terminales, desde la raíz del repositorio.
+Three terminals, from the repository root.
 
 ```bash
-# 1. Servicio externo simulado — http://localhost:4000
+# 1. Mock external service — http://localhost:4000
 cd mock-service
 npm install
 npm start
 
-# 2. API del backend — http://localhost:5137
+# 2. Backend API — http://localhost:5137
 dotnet run --project backend/Loan.Api --launch-profile http
 
 # 3. Frontend — http://localhost:3000
@@ -39,46 +40,42 @@ npm install
 npm run dev
 ```
 
-Abrir http://localhost:3000.
+Open http://localhost:3000.
 
-Para empezar de cero, detener la API y borrar `backend/Loan.Api/loan.db`.
+To reset the data, stop the API and delete `backend/Loan.Api/loan.db`.
 
-## Cómo correr las pruebas
+## Run the tests
 
 ```bash
 dotnet test
 ```
 
-Son 13 pruebas: motor de reglas, camino del cliente recurrente, reversión de la
-transacción y el endpoint HTTP.
+13 tests: rule engine, returning-customer path, transaction rollback and the HTTP endpoint.
 
-## Datos de prueba
+## Test data
 
-| Caso | Qué escribir |
+| Scenario | What to type |
 | --- | --- |
-| **Aprobado** | Cualquier estado distinto de NY y un SSN que no esté en la lista negra. Por ejemplo: estado `TX`, SSN `555-12-3456`. |
-| **Rechazo por estado** | Estado `NY`, con cualquier SSN. |
-| **Rechazo por SSN** | SSN `111-11-1111`, `222-22-2222` o `333-33-3333` (configurados en `backend/Loan.Api/appsettings.json`, sección `BlacklistedSsns`). |
-| **Cliente recurrente** | Enviar una solicitud aprobada y volver a enviarla con **el mismo SSN** cambiando el monto o la empresa. La pantalla indica que la solicitud se actualizó, y en la base de datos sigue habiendo un solo cliente y una sola solicitud. |
+| **Approved** | Any state other than NY and any SSN not blacklisted. Example: state `TX`, SSN `555-12-3456`. |
+| **Denied — state** | State `NY`, any SSN. |
+| **Denied — blacklisted SSN** | SSN `111-11-1111`, `222-22-2222` or `333-33-3333` (configured in `backend/Loan.Api/appsettings.json` → `BlacklistedSsns`). |
+| **Returning customer** | Submit an approved application, then submit again with the **same SSN** and a different amount or company. The result page says the application was updated, and the database still holds one customer and one application. |
 
-Para ver en cualquier momento qué recibió el servicio externo:
+Check what the external service received at any time:
 
 ```bash
 curl http://localhost:4000/customers
 ```
 
-El servicio simulado también escribe cada llamada en su consola:
-`[external-service] CREATE 555-12-3456 amount=25000`.
+The mock also logs every call: `[external-service] CREATE 555-12-3456 amount=25000`.
 
-## Decisiones y lo que quedó fuera a propósito
+## Decisions and what was left out
 
-- **Sin autenticación**, tal como indica el enunciado.
-- **SQLite** en lugar de SQL Server o PostgreSQL: transacciones reales sin que quien
-  revise tenga que instalar nada.
-- El proceso en segundo plano consulta la bandeja de salida por sondeo, con un tope de
-  reintentos; no se usa ningún broker de mensajería.
-- **Sin Docker, sin integración continua y sin datos semilla.** El razonamiento de cada
-  uno está en [ARCHITECTURE.md](ARCHITECTURE.md), junto con el resto de decisiones.
+- **No authentication**, as stated in the assignment.
+- **SQLite** instead of SQL Server/PostgreSQL: real transactions with zero setup for the reviewer.
+- The background worker polls the outbox and retries a bounded number of times; no message broker.
+- **No Docker, no CI, no seed data.** The reasoning for each one is in
+  [ARCHITECTURE.md](ARCHITECTURE.md), together with the rest of the trade-offs.
 
-La interfaz está en inglés porque el producto y sus términos (SSN, state) son de
-Estados Unidos; la documentación y los comentarios del código están en español.
+The UI is in English because the product and its fields (SSN, state) are US-specific.
+Code comments are written in Spanish; the documentation is available in both languages.

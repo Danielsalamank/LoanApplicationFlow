@@ -1,30 +1,32 @@
-# Arquitectura
+# Architecture
 
-## Estructura del proyecto
+_Versión en español: [ARCHITECTURE.es.md](ARCHITECTURE.es.md)_
+
+## Project structure
 
 ```
 backend/
-  Loan.Domain/          Entidades (Customer, Application) y el contrato IDenyRule. Sin dependencias.
-  Loan.Application/     Caso de uso (SubmitApplication), motor de reglas, reglas de rechazo y el puerto ILoanStore.
-  Loan.Infrastructure/  DbContext de EF Core, LoanStore (ILoanStore), tabla de bandeja de salida y proceso publicador.
-  Loan.Api/             Controlador de ASP.NET, validación de la petición y registro de dependencias.
-  Loan.Tests/           Pruebas con xUnit.
-frontend/               Next.js con App Router: formulario, /approved y /denied.
-mock-service/           Aplicación Express que hace de servicio externo.
+  Loan.Domain/          Entities (Customer, Application) and the IDenyRule contract. No dependencies.
+  Loan.Application/     Use case (SubmitApplication), RuleEngine, the deny rules and the ILoanStore port.
+  Loan.Infrastructure/  EF Core DbContext, LoanStore (ILoanStore), outbox table and the background publisher.
+  Loan.Api/             ASP.NET controller, request validation, DI composition root.
+  Loan.Tests/           xUnit tests.
+frontend/               Next.js App Router: form page, /approved, /denied.
+mock-service/           Express app standing in for the external service.
 ```
 
-Las dependencias apuntan hacia adentro: `Api → Infrastructure → Application → Domain`.
-La capa de aplicación solo conoce el puerto `ILoanStore`, de modo que EF Core, SQLite y
-el cliente HTTP se pueden reemplazar sin tocar las reglas de negocio. El controlador se
-limita a traducir HTTP al caso de uso.
+Dependencies point inward: `Api → Infrastructure → Application → Domain`. The
+application layer only knows the `ILoanStore` port, so EF Core, SQLite and the HTTP
+client are replaceable without touching business rules. The controller only maps
+HTTP to the use case.
 
-## Motor de reglas
+## Rule engine
 
-`RuleEngine` recibe un `IEnumerable<IDenyRule>` y devuelve el primer motivo de rechazo
-que encuentre; si ninguna regla se cumple, la solicitud queda aprobada. El motor no
-sabe nada de las reglas concretas.
+`RuleEngine` receives `IEnumerable<IDenyRule>` and returns the first denial reason it
+finds; if no rule matches, the application is approved. The engine knows nothing about
+the individual rules.
 
-Para agregar una regla no se modifica ninguna de las existentes:
+Adding a rule (open/closed — existing rules are never modified):
 
 ```csharp
 public class MinimumAmountDenyRule : IDenyRule
@@ -34,52 +36,49 @@ public class MinimumAmountDenyRule : IDenyRule
 }
 ```
 
-Y una línea en `Program.cs`:
+Then one line in `Program.cs`:
 
 ```csharp
 builder.Services.AddScoped<IDenyRule, MinimumAmountDenyRule>();
 ```
 
-La lista negra de SSN vive en la configuración (`appsettings.json`), no en el código.
+The blacklist itself lives in configuration (`appsettings.json`), not in code.
 
-## Transacción
+## Transaction
 
-`LoanStore.SaveApprovedAsync` escribe el cliente, la solicitud **y** el registro del
-evento dentro de un único `SaveChangesAsync`, que EF Core envuelve en una sola
-transacción de base de datos. O existen los tres, o no existe ninguno:
+`LoanStore.SaveApprovedAsync` writes the customer, the application **and** the outbox
+row within a single `SaveChangesAsync`, which EF Core wraps in one database
+transaction. Either all three exist or none does:
 
-- Si falla la inserción o actualización del cliente o de la solicitud, no se confirma
-  nada y **no se publica ningún evento**, porque el evento es una fila de esa misma
-  transacción.
-- Si el proceso se cae justo después de confirmar, la fila del evento sobrevive y el
-  proceso en segundo plano la entrega en el siguiente ciclo.
-- Si el servicio externo está caído, solo falla la entrega: la base de datos queda
-  consistente y el mensaje se reintenta.
+- If the customer or application insert/update fails → nothing is committed and **no
+  event is published**, because the event is a row in the same transaction.
+- If the process dies right after the commit → the outbox row survives and the worker
+  delivers it on the next poll.
+- If the external service is down → only the delivery fails; the database stays
+  consistent and the message is retried.
 
-Por eso el evento se guarda en lugar de enviarse dentro de la petición: una llamada
-HTTP no puede formar parte de una transacción de base de datos, así que el enfoque
-ingenuo de "guardo y después hago POST" deja los dos sistemas desincronizados cada vez
-que el POST falla.
+This is why the event is stored instead of sent inline: an HTTP call cannot be part of
+a database transaction, so a naive "save then POST" leaves the two systems out of sync
+whenever the POST fails.
 
-## Cliente recurrente
+## Returning customer
 
-El caso de uso busca al cliente por su SSN. Si ya existe, actualiza el cliente y su
-única solicitud en el mismo registro, en lugar de insertar, y el evento sale marcado
-con `isReturningCustomer: true`. Un índice único sobre `Ssn` garantiza el invariante
-a nivel de base de datos.
+The use case looks the customer up by SSN. If it exists, it updates the customer and
+its single application in place (EF change tracking) instead of inserting, and the
+event is flagged `isReturningCustomer: true`. A unique index on `Ssn` guarantees the
+invariant at the database level.
 
-## Evento en segundo plano y servicio externo
+## Background event and external service
 
-`OutboxPublisher` es un `BackgroundService` que cada dos segundos revisa las filas
-pendientes de la bandeja de salida, fuera de la petición HTTP que responde al
-formulario, y las entrega:
+`OutboxPublisher` is a `BackgroundService` that polls unprocessed outbox rows every
+two seconds, outside the HTTP request that answers the form, and delivers them:
 
-| Caso | Llamada |
+| Case | Call |
 | --- | --- |
-| Cliente nuevo | `POST /customers` |
-| Cliente recurrente | `PUT /customers/{ssn}` |
+| New customer | `POST /customers` |
+| Returning customer | `PUT /customers/{ssn}` |
 
-Contenido del mensaje:
+Payload:
 
 ```json
 {
@@ -89,52 +88,51 @@ Contenido del mensaje:
 }
 ```
 
-Decisiones de diseño:
+Design choices:
 
-- **El SSN es la clave en el servicio externo.** Es la misma clave natural con la que
-  el dominio identifica a un cliente recurrente, así que el contrato queda idempotente:
-  reenviar un mensaje deja el mismo estado final.
-- **Entrega al menos una vez, con tope de 5 intentos.** Los fallos quedan registrados
-  en la propia fila (`Attempts`, `LastError`) y se reintentan en el siguiente ciclo.
-  Como los endpoints son idempotentes, una entrega duplicada no hace daño.
+- **SSN as the external key.** The external service is keyed by SSN, the same natural
+  key the domain uses to identify a returning customer, so the contract is idempotent:
+  redelivering a message produces the same final state.
+- **At-least-once with a retry cap (5 attempts).** Failures are logged in the outbox
+  row (`Attempts`, `LastError`) and retried on the next poll. Because the endpoints are
+  idempotent, a duplicate delivery is harmless.
 
-## Concesiones
+## Trade-offs
 
-- **Bandeja de salida por sondeo en vez de un broker de mensajería.** RabbitMQ o Kafka
-  agregarían infraestructura que este alcance no necesita; la bandeja de salida ya da
-  la garantía de atomicidad, que es el requisito real.
-- **SQLite.** Transacciones reales y ningún servidor que instalar. El proveedor es una
-  sola línea en `Program.cs`, así que pasar a SQL Server o PostgreSQL es un cambio de
-  configuración.
-- **`EnsureCreated()` en lugar de migraciones.** Hay un solo esquema y no hay historial
-  de versiones que mantener en una prueba; en un despliegue real, las migraciones
-  serían lo primero que agregaría.
-- **Sin repositorio por entidad, sin MediatR y sin AutoMapper.** Un único caso de uso no
-  justifica esas capas.
-- **Cada cliente tiene exactamente una solicitud**, tal como describe el enunciado, y el
-  camino del cliente recurrente la actualiza. Permitir varias solicitudes por cliente
-  obligaría a decidir cuál se actualiza, y esa regla no está especificada.
-- **Los motivos de rechazo se devuelven al navegador.** Sirve para el ejercicio, pero un
-  producto real mantendría el motivo real en el servidor (que alguien pueda descubrir
-  la lista negra probando el formulario no es deseable) y mostraría un mensaje genérico.
+- **Outbox by polling instead of a message broker.** RabbitMQ/Kafka would add
+  infrastructure the assignment does not need; the outbox already provides the
+  atomicity guarantee, which is the actual requirement.
+- **SQLite.** Real transactions, no server to install. The provider is a single line in
+  `Program.cs`, so switching to SQL Server or PostgreSQL is a configuration change.
+- **`EnsureCreated()` instead of migrations.** One schema, no versioning history to
+  maintain in a take-home; migrations would be the first thing to add for a real
+  deployment.
+- **No repository interface per entity, no MediatR, no AutoMapper.** One use case does
+  not justify those layers.
+- **A customer has exactly one application**, as described in the assignment; the
+  returning-customer path updates it. Supporting several applications per customer
+  would mean deciding which one to update, and that rule was not specified.
+- **Denial reasons are returned to the browser.** Fine for the exercise; a real product
+  would keep the underlying reason internal (a blacklist hit should not be discoverable
+  by probing the form) and show a generic message.
 
-## Extras que decidí no incluir
+## Extras deliberately left out
 
-El enunciado admite datos semilla, Docker, integración continua o registro estructurado
-"solo si se ganan su lugar". Revisé cada uno y ninguno lo hace en este alcance:
+The assignment welcomes seed data, Docker, CI or structured logging "only if they earn
+their place". I went through each one and none does at this scope:
 
-- **Autenticación:** el enunciado la descarta explícitamente y no hay ningún dato que
-  proteger detrás de una sesión.
-- **Docker:** levantar el proyecto ya son tres comandos y no hay ningún servicio que
-  instalar, porque la base de datos es un archivo SQLite. Un `docker-compose` agregaría
-  archivos y tiempo de construcción para resolver un problema que aquí no existe.
-- **Integración continua:** el valor de un pipeline es impedir que se rompa lo que ya
-  funciona a lo largo del tiempo, y este repositorio no va a recibir más cambios.
-  `dotnet test` cumple la misma función para quien lo revise.
-- **Datos semilla:** la lista negra de SSN vive en la configuración y el README indica
-  exactamente qué escribir para cada caso. Precargar clientes solo ensuciaría la
-  demostración del camino del cliente recurrente.
-- **Registro estructurado:** se usa `ILogger` donde de verdad aporta, que es la entrega
-  del evento en segundo plano (entregado, fallido, número de intentos), porque ahí
-  falla algo fuera del proceso y sin rastro no habría manera de diagnosticarlo. Sumar
-  Serilog con sinks encima de eso sería configuración sin lector.
+- **Authentication:** explicitly ruled out by the assignment, and there is no data that
+  needs a session behind it.
+- **Docker:** running the project is already three commands and there is nothing to
+  install, because the database is a SQLite file. A compose file would add files and
+  build time to solve a problem that does not exist here.
+- **CI:** a pipeline earns its place by keeping working code from breaking over time,
+  and this repository will not receive further changes. `dotnet test` serves the same
+  purpose for a reviewer.
+- **Seed data:** the SSN blacklist lives in configuration and the README states exactly
+  what to type for each scenario. Preloading customers would only muddy the
+  returning-customer demonstration.
+- **Structured logging:** `ILogger` is used where it actually pays off — the background
+  delivery of the event (delivered, failed, attempt count) — because that is where
+  something fails outside the process and there would be no way to diagnose it
+  otherwise. Adding Serilog and sinks on top would be configuration without a reader.
