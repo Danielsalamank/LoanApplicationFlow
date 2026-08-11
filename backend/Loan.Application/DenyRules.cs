@@ -2,7 +2,10 @@ using Loan.Domain;
 
 namespace Loan.Application;
 
-/// <summary>Reglas de rechazo concretas. Agregar una regla = una clase nueva y una línea de registro.</summary>
+/// <summary>
+/// Reglas de rechazo concretas. Agregar una regla nueva significa crear una clase
+/// más y registrarla; ninguna de las existentes se modifica.
+/// </summary>
 public class NyStateDenyRule : IDenyRule
 {
     public string? Evaluate(LoanApplicationData data) =>

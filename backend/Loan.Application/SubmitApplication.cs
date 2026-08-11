@@ -3,7 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Loan.Application;
 
-/// <summary>Puerto: guardado transaccional de una solicitud aprobada.</summary>
+/// <summary>
+/// Puerto: guardado transaccional de una solicitud aprobada.
+/// </summary>
 public interface ILoanStore
 {
     Task<Customer?> FindCustomerBySsnAsync(string ssn, CancellationToken ct);
@@ -15,7 +17,9 @@ public interface ILoanStore
     Task SaveApprovedAsync(Customer customer, Domain.Application application, LoanEvent loanEvent, CancellationToken ct);
 }
 
-/// <summary>Evento que se entrega en segundo plano al servicio externo.</summary>
+/// <summary>
+/// Evento que se entrega en segundo plano al servicio externo.
+/// </summary>
 public record LoanEvent(Customer Customer, Domain.Application Application, bool IsReturningCustomer);
 
 public record SubmitResult(bool Approved, string? DenialReason, bool IsReturningCustomer);
@@ -95,6 +99,8 @@ public class SubmitApplication
         return new SubmitResult(true, null, isReturning);
     }
 
-    /// <summary>Deja solo los últimos cuatro dígitos: el SSN completo no debe llegar a los registros.</summary>
+    /// <summary>
+    /// Deja solo los últimos cuatro dígitos: el SSN completo no debe llegar a los registros.
+    /// </summary>
     private static string Mask(string ssn) => $"***-**-{ssn[^4..]}";
 }

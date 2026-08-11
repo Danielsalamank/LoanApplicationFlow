@@ -9,7 +9,9 @@ public interface IDenyRule
     string? Evaluate(LoanApplicationData data);
 }
 
-/// <summary>Copia inmutable de los datos del formulario que evalúan las reglas.</summary>
+/// <summary>
+/// Copia inmutable de los datos del formulario que evalúan las reglas.
+/// </summary>
 public record LoanApplicationData(
     string FirstName,
     string LastName,
