@@ -6,6 +6,20 @@ app.use(express.json());
 /** Almacén en memoria indexado por SSN: el contrato es idempotente por cliente. */
 const customers = new Map();
 
+/** Índice del servicio: qué es esto y qué endpoints expone. */
+app.get("/", (_req, res) =>
+  res.json({
+    service: "Mock external service",
+    description: "Stands in for the third-party system that receives approved applications.",
+    endpoints: {
+      "POST /customers": "Create a customer (new customer event)",
+      "PUT /customers/:ssn": "Update a customer (returning customer event)",
+      "GET /customers": "Everything received so far, for inspection",
+    },
+    received: customers.size,
+  })
+);
+
 app.post("/customers", (req, res) => {
   const ssn = req.body?.customer?.ssn;
   if (!ssn) return res.status(400).json({ error: "customer.ssn is required" });
