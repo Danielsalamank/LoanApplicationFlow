@@ -136,7 +136,12 @@ El enunciado admite datos semilla, Docker, integración continua o registro estr
 - **Datos semilla:** la lista negra de SSN vive en la configuración y el README indica
   exactamente qué escribir para cada caso. Precargar clientes solo ensuciaría la
   demostración del camino del cliente recurrente.
-- **Registro estructurado:** se usa `ILogger` donde de verdad aporta, que es la entrega
-  del evento en segundo plano (entregado, fallido, número de intentos), porque ahí
-  falla algo fuera del proceso y sin rastro no habría manera de diagnosticarlo. Sumar
-  Serilog con sinks encima de eso sería configuración sin lector.
+- **Registro estructurado:** se usa `ILogger` donde de verdad aporta, y en ningún otro
+  sitio. Se lo ganan dos lugares. El primero, cada decisión de crédito, que queda
+  registrada con la regla que la rechazó, el estado y el monto: quien presta dinero
+  tiene que poder explicar meses después por qué se rechazó una solicitud concreta. El
+  segundo, la entrega del evento en segundo plano (entregado, fallido, número de
+  intentos), porque ahí falla algo fuera del proceso y sin rastro no habría manera de
+  diagnosticarlo. El SSN se enmascara siempre a sus últimos cuatro dígitos antes de
+  llegar a un registro. Sumar Serilog con sinks encima de eso sería configuración sin
+  lector.

@@ -3,6 +3,7 @@ using Loan.Domain;
 using Loan.Infrastructure;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Loan.Tests;
 
@@ -26,7 +27,9 @@ public class SubmitApplicationTests : IDisposable
     private LoanDbContext NewContext() => new(_options);
 
     private SubmitApplication NewUseCase(LoanDbContext db) =>
-        new(new RuleEngine([new NyStateDenyRule(), new BlacklistedSsnDenyRule(["111-11-1111"])]), new LoanStore(db));
+        new(new RuleEngine([new NyStateDenyRule(), new BlacklistedSsnDenyRule(["111-11-1111"])]),
+            new LoanStore(db),
+            NullLogger<SubmitApplication>.Instance);
 
     private static LoanApplicationData Data(decimal amount = 10_000m, string company = "Acme LLC") =>
         new("Ana", "Lopez", "1 Main St", "TX", company, amount, "555-55-5555");
@@ -97,7 +100,8 @@ public class SubmitApplicationTests : IDisposable
         {
             var useCase = new SubmitApplication(
                 new RuleEngine([]),
-                new AlwaysNewCustomerStore(db));
+                new AlwaysNewCustomerStore(db),
+                NullLogger<SubmitApplication>.Instance);
 
             await Assert.ThrowsAnyAsync<DbUpdateException>(() =>
                 useCase.ExecuteAsync(Data(amount: 99_000m), CancellationToken.None));
