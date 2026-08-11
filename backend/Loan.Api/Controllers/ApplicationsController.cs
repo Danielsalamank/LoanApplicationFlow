@@ -18,6 +18,7 @@ public record SubmitApplicationResponse(string Status, string? Reason, bool Retu
 
 [ApiController]
 [Route("api/applications")]
+[Produces("application/json")]
 public class ApplicationsController : ControllerBase
 {
     private readonly SubmitApplication _submitApplication;

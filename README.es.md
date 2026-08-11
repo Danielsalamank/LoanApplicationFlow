@@ -43,6 +43,9 @@ npm run dev
 
 Abrir http://localhost:3000.
 
+El contrato de la API se puede consultar en http://localhost:5137/scalar/v1 (solo en
+desarrollo), donde `POST /api/applications` se inspecciona y se ejecuta sin Postman.
+
 Para empezar de cero, detener la API y borrar `backend/Loan.Api/loan.db`.
 
 ## Cómo correr las pruebas

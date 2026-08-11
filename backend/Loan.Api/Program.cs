@@ -2,6 +2,7 @@ using Loan.Application;
 using Loan.Domain;
 using Loan.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,7 +39,9 @@ using (var scope = app.Services.CreateScope())
 
 if (app.Environment.IsDevelopment())
 {
+    // Contrato de la API navegable en /scalar/v1, para revisar y probar el endpoint sin Postman.
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseCors();

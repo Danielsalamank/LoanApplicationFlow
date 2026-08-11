@@ -42,6 +42,9 @@ npm run dev
 
 Open http://localhost:3000.
 
+The API contract is browsable at http://localhost:5137/scalar/v1 (development only),
+where `POST /api/applications` can be inspected and executed without Postman.
+
 To reset the data, stop the API and delete `backend/Loan.Api/loan.db`.
 
 ## Run the tests

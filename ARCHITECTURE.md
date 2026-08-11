@@ -132,11 +132,17 @@ their place". I went through each one and none does at this scope:
 - **Seed data:** the SSN blacklist lives in configuration and the README states exactly
   what to type for each scenario. Preloading customers would only muddy the
   returning-customer demonstration.
-- **Structured logging:** `ILogger` is used where it actually pays off, and nowhere else.
-  Two places earn it. First, every credit decision is logged with the rule that denied
-  it, the state and the amount — a lender has to be able to explain, months later, why a
-  specific application was rejected. Second, the background delivery of the event
-  (delivered, failed, attempt count), because that is where something fails outside the
-  process and there would be no way to diagnose it otherwise. The SSN is always masked
-  down to its last four digits before it reaches a log. Adding Serilog and sinks on top
-  of that would be configuration without a reader.
+
+Two things did earn their place:
+
+- **Structured logging.** `ILogger` is used in exactly two places. First, every credit
+  decision is logged with the rule that denied it, the state and the amount — a lender
+  has to be able to explain, months later, why a specific application was rejected.
+  Second, the background delivery of the event (delivered, failed, attempt count),
+  because that is where something fails outside the process and there would be no way to
+  diagnose it otherwise. The SSN is always masked down to its last four digits before it
+  reaches a log. Adding Serilog and sinks on top of that would be configuration without
+  a reader.
+- **A browsable API contract** at `/scalar/v1`, development only. ASP.NET already
+  generates the OpenAPI document; Scalar renders it, so the reviewer can read and
+  execute the only public endpoint of the system without Postman. One package, one line.
