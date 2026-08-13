@@ -1,6 +1,6 @@
 # Fundo — Loan Application Flow
 
-> **Demo video:** _TODO: paste your public Loom/Jam link here before sending the repository._
+> **Demo video:** https://youtu.be/dSFtyfHvHFs
 
 _Versión en español: [README.es.md](README.es.md)_
 

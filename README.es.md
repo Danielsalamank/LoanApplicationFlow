@@ -1,6 +1,6 @@
 # Fundo — Flujo de solicitud de préstamo
 
-> **Video de la demo:** _PENDIENTE: pegar aquí el enlace público (Loom) antes de enviar el repositorio._
+> **Video de la demo:** https://youtu.be/dSFtyfHvHFs
 
 _English version: [README.md](README.md)_
 
